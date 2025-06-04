@@ -109,13 +109,7 @@ document.getElementById("arrangeButton").addEventListener("click", () => {
         transformedXml = transformedXml.replace(/<lyric[\s\S]*?<\/lyric>/g, "");
       }
 
-      // 4e. Add <notehead>slash</notehead> to each note if slash notation is enabled
-      if (useSlashNotation) {
-        transformedXml = transformedXml.replace(/<note>([\s\S]*?)<\/note>/g, (match, noteContent) => {
-          if (noteContent.includes("<notehead>")) return match; // skip if already has notehead
-          return `<note>${noteContent}<notehead>slash</notehead></note>`;
-        });
-      }
+
 
       // 5. Trigger download of modified XML
       const blob = new Blob([transformedXml], { type: "application/xml" });
