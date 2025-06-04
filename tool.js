@@ -8,17 +8,33 @@ document.getElementById("arrangeButton").addEventListener("click", () => {
   }
 
   const config = {
-    "Soprano":     { octaveShift: 1, clef: "treble", transpose: null },
-    "Violin":      { octaveShift: 1, clef: "treble", transpose: null },
+    "Soprano": {
+      octaveShift: 1,
+      clef: "treble",
+      transpose: null,
+      showLyrics: true
+    },
+    "Violin": {
+      octaveShift: 1,
+      clef: "treble",
+      transpose: null,
+      showLyrics: false
+    },
     "Bb Clarinet": {
       octaveShift: 1,
       clef: "treble",
-      transpose: `<transpose><diatonic>0</diatonic><chromatic>2</chromatic></transpose>`
+      transpose: `<transpose><diatonic>0</diatonic><chromatic>2</chromatic></transpose>`,
+      showLyrics: false
     },
-    "Double Bass": { octaveShift: -2, clef: "bass", transpose: null }
+    "Double Bass": {
+      octaveShift: -2,
+      clef: "bass",
+      transpose: null,
+      showLyrics: false
+    }
   };
 
-  const { octaveShift, clef, transpose } = config[instrument];
+  const { octaveShift, clef, transpose, showLyrics } = config[instrument];
 
   const clefTemplates = {
     treble: `<clef><sign>G</sign><line>2</line></clef>`,
@@ -48,7 +64,7 @@ document.getElementById("arrangeButton").addEventListener("click", () => {
         clefTemplates[clef]
       );
 
-      // 4a. Insert <transpose> into <score-part> (if needed)
+      // 4a. Insert <transpose> into <score-part>
       if (transpose) {
         transformedXml = transformedXml.replace(
           /(<score-part[^>]*>[\s\S]*?<part-name>[^<]*<\/part-name>)([\s\S]*?)(<\/score-part>)/,
@@ -59,7 +75,7 @@ document.getElementById("arrangeButton").addEventListener("click", () => {
         );
       }
 
-      // 4b. Insert <transpose> into first measure's <attributes> after <key>
+      // 4b. Insert <transpose> into <attributes> after <key>
       if (transpose) {
         transformedXml = transformedXml.replace(
           /(<attributes>[\s\S]*?<key>[\s\S]*?<\/key>)/,
@@ -67,7 +83,12 @@ document.getElementById("arrangeButton").addEventListener("click", () => {
         );
       }
 
-      // 5. Trigger download
+      // 5. Remove <lyric> tags if lyrics should not be shown
+      if (!showLyrics) {
+        transformedXml = transformedXml.replace(/<lyric[\s\S]*?<\/lyric>/g, "");
+      }
+
+      // 6. Trigger download
       const blob = new Blob([transformedXml], { type: "application/xml" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
