@@ -8,13 +8,17 @@ document.getElementById("arrangeButton").addEventListener("click", () => {
   }
 
   const config = {
-    "Soprano":     { octaveShift: 1, clef: "treble" },
-    "Violin":      { octaveShift: 1, clef: "treble" },
-    "Bb Clarinet": { octaveShift: 1, clef: "treble" },
-    "Double Bass": { octaveShift: -2, clef: "bass" }
+    "Soprano":     { octaveShift: 1, clef: "treble", transpose: null },
+    "Violin":      { octaveShift: 1, clef: "treble", transpose: null },
+    "Bb Clarinet": {
+      octaveShift: 1,
+      clef: "treble",
+      transpose: `<transpose><diatonic>0</diatonic><chromatic>2</chromatic></transpose>`
+    },
+    "Double Bass": { octaveShift: -2, clef: "bass", transpose: null }
   };
 
-  const { octaveShift, clef } = config[instrument];
+  const { octaveShift, clef, transpose } = config[instrument];
 
   const clefTemplates = {
     treble: `<clef><sign>G</sign><line>2</line></clef>`,
@@ -26,7 +30,7 @@ document.getElementById("arrangeButton").addEventListener("click", () => {
     .then(xmlText => {
       let transformedXml = xmlText;
 
-      // 1. Shift all <octave> values
+      // 1. Octave shift
       transformedXml = transformedXml.replace(/<octave>(\d+)<\/octave>/g, (match, p1) => {
         const shifted = parseInt(p1) + octaveShift;
         return `<octave>${shifted}</octave>`;
@@ -44,7 +48,26 @@ document.getElementById("arrangeButton").addEventListener("click", () => {
         clefTemplates[clef]
       );
 
-      // 4. Trigger download
+      // 4a. Insert <transpose> into <score-part> (if needed)
+      if (transpose) {
+        transformedXml = transformedXml.replace(
+          /(<score-part[^>]*>[\s\S]*?<part-name>[^<]*<\/part-name>)([\s\S]*?)(<\/score-part>)/,
+          (match, startTag, middle, endTag) => {
+            const cleanedMiddle = middle.replace(/<transpose>[\s\S]*?<\/transpose>/g, "");
+            return `${startTag}${cleanedMiddle}\n    ${transpose}\n  ${endTag}`;
+          }
+        );
+      }
+
+      // 4b. Insert <transpose> into first measure's <attributes> after <key>
+      if (transpose) {
+        transformedXml = transformedXml.replace(
+          /(<attributes>[\s\S]*?<key>[\s\S]*?<\/key>)/,
+          `$1\n      ${transpose}`
+        );
+      }
+
+      // 5. Trigger download
       const blob = new Blob([transformedXml], { type: "application/xml" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
