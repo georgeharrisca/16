@@ -7,25 +7,51 @@ document.getElementById("arrangeButton").addEventListener("click", () => {
     return;
   }
 
-  // Define instrument-specific transformations
-const config = {
-  "Soprano":     { octaveShift: 1, clef: "treble", transpose: null, hideChords: true },
-  "Violin":      { octaveShift: 1, clef: "treble", transpose: null, hideChords: true },
-  "Bb Clarinet": {
-    octaveShift: 1,
-    clef: "treble",
-    transpose: `<transpose><diatonic>0</diatonic><chromatic>2</chromatic></transpose>`,
-    hideChords: true
-  },
-  "Double Bass": { octaveShift: -2, clef: "bass", transpose: null, hideChords: true }
-};
+  // Configuration per instrument
+  const config = {
+    "Soprano": {
+      octaveShift: 1,
+      clef: "treble",
+      transpose: null,
+      hideChords: true,
+      showLyrics: true,
+      useSlashNotation: false
+    },
+    "Violin": {
+      octaveShift: 1,
+      clef: "treble",
+      transpose: null,
+      hideChords: true,
+      showLyrics: false,
+      useSlashNotation: false
+    },
+    "Bb Clarinet": {
+      octaveShift: 1,
+      clef: "treble",
+      transpose: `<transpose><diatonic>0</diatonic><chromatic>2</chromatic></transpose>`,
+      hideChords: true,
+      showLyrics: false,
+      useSlashNotation: false
+    },
+    "Double Bass": {
+      octaveShift: -2,
+      clef: "bass",
+      transpose: null,
+      hideChords: true,
+      showLyrics: false,
+      useSlashNotation: false
+    }
+  };
 
+  const {
+    octaveShift,
+    clef,
+    transpose,
+    hideChords,
+    showLyrics,
+    useSlashNotation
+  } = config[instrument];
 
-
-const { octaveShift, clef, transpose, hideChords } = config[instrument];
-
-
-  // Define clef XML snippets
   const clefTemplates = {
     treble: `<clef><sign>G</sign><line>2</line></clef>`,
     bass: `<clef><sign>F</sign><line>4</line></clef>`
@@ -55,7 +81,7 @@ const { octaveShift, clef, transpose, hideChords } = config[instrument];
         clefTemplates[clef]
       );
 
-      // 4a. Replace or insert <transpose> block inside <score-part>
+      // 4a. Replace or insert <transpose> block in <score-part>
       transformedXml = transformedXml.replace(
         /(<score-part[^>]*>[\s\S]*?<part-name>[^<]*<\/part-name>)([\s\S]*?)(<\/score-part>)/,
         (match, startTag, middle, endTag) => {
@@ -65,19 +91,33 @@ const { octaveShift, clef, transpose, hideChords } = config[instrument];
         }
       );
 
-      // 4b. Also insert transpose into first <measure>'s <attributes> block
+      // 4b. Also insert <transpose> into the first <measure>'s <attributes> block
       if (transpose) {
         transformedXml = transformedXml.replace(
           /(<part[^>]*>[\s\S]*?<measure[^>]*>[\s\S]*?<attributes[^>]*>)/,
           `$1\n      ${transpose}`
         );
       }
-// 4c. Remove all <harmony> tags if chord symbols should be hidden
-if (hideChords) {
-  transformedXml = transformedXml.replace(/<harmony[\s\S]*?<\/harmony>/g, "");
-}
 
-      // 5. Trigger download
+      // 4c. Remove all <harmony> tags if chords should be hidden
+      if (hideChords) {
+        transformedXml = transformedXml.replace(/<harmony[\s\S]*?<\/harmony>/g, "");
+      }
+
+      // 4d. Remove all <lyric> tags if lyrics should be hidden
+      if (!showLyrics) {
+        transformedXml = transformedXml.replace(/<lyric[\s\S]*?<\/lyric>/g, "");
+      }
+
+      // 4e. Add <notehead>slash</notehead> to each note if slash notation is enabled
+      if (useSlashNotation) {
+        transformedXml = transformedXml.replace(/<note>([\s\S]*?)<\/note>/g, (match, noteContent) => {
+          if (noteContent.includes("<notehead>")) return match; // skip if already has notehead
+          return `<note>${noteContent}<notehead>slash</notehead></note>`;
+        });
+      }
+
+      // 5. Trigger download of modified XML
       const blob = new Blob([transformedXml], { type: "application/xml" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
