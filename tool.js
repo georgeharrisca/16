@@ -37,61 +37,82 @@ document.getElementById("arrangeButton").addEventListener("click", () => {
   const { octaveShift, clef, transpose, showLyrics } = config[instrument];
 
   const clefTemplates = {
-    treble: `<clef><sign>G</sign><line>2</line></clef>`,
-    bass: `<clef><sign>F</sign><line>4</line></clef>`
+    treble: `<sign>G</sign><line>2</line>`,
+    bass: `<sign>F</sign><line>4</line>`
   };
 
   fetch(xmlFile)
     .then(response => response.text())
     .then(xmlText => {
-      let transformedXml = xmlText;
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(xmlText, "application/xml");
 
       // 1. Octave shift
-      transformedXml = transformedXml.replace(/<octave>(\d+)<\/octave>/g, (match, p1) => {
-        const shifted = parseInt(p1) + octaveShift;
-        return `<octave>${shifted}</octave>`;
+      const octaves = xmlDoc.querySelectorAll("octave");
+      octaves.forEach(oct => {
+        const newVal = parseInt(oct.textContent) + octaveShift;
+        oct.textContent = newVal;
       });
 
-      // 2. Replace <part-name>
-      transformedXml = transformedXml.replace(
-        /<part-name>[^<]*<\/part-name>/,
-        `<part-name>${instrument}</part-name>`
-      );
+      // 2. Part-name update
+      const partName = xmlDoc.querySelector("score-part part-name");
+      if (partName) partName.textContent = instrument;
 
-      // 3. Replace <clef>
-      transformedXml = transformedXml.replace(
-        /<clef>[\s\S]*?<\/clef>/,
-        clefTemplates[clef]
-      );
+      // 3. Clef replacement
+      const clefNode = xmlDoc.querySelector("clef");
+      if (clefNode) {
+        while (clefNode.firstChild) clefNode.removeChild(clefNode.firstChild);
+        const clefFragment = parser.parseFromString(
+          `<dummy>${clefTemplates[clef]}</dummy>`,
+          "application/xml"
+        );
+        const newClef = clefFragment.querySelector("dummy");
+        while (newClef.firstChild) clefNode.appendChild(newClef.firstChild);
+      }
 
-      // 4a. Insert <transpose> into <score-part>
+      // 4a. Transpose inside <score-part>
       if (transpose) {
-        transformedXml = transformedXml.replace(
-          /(<score-part[^>]*>[\s\S]*?<part-name>[^<]*<\/part-name>)([\s\S]*?)(<\/score-part>)/,
-          (match, startTag, middle, endTag) => {
-            const cleanedMiddle = middle.replace(/<transpose>[\s\S]*?<\/transpose>/g, "");
-            return `${startTag}${cleanedMiddle}\n    ${transpose}\n  ${endTag}`;
+        const scorePart = xmlDoc.querySelector("score-part");
+        if (scorePart) {
+          const existing = scorePart.querySelector("transpose");
+          if (existing) existing.remove();
+          const transNode = parser.parseFromString(
+            `<dummy>${transpose}</dummy>`,
+            "application/xml"
+          ).querySelector("transpose");
+          scorePart.appendChild(transNode);
+        }
+      }
+
+      // 4b. Transpose inside <attributes> (after <key>)
+      if (transpose) {
+        const attributes = xmlDoc.querySelector("attributes");
+        if (attributes) {
+          const existing = attributes.querySelector("transpose");
+          if (existing) existing.remove();
+          const transNode = parser.parseFromString(
+            `<dummy>${transpose}</dummy>`,
+            "application/xml"
+          ).querySelector("transpose");
+          const key = attributes.querySelector("key");
+          if (key && key.nextSibling) {
+            attributes.insertBefore(transNode, key.nextSibling);
+          } else {
+            attributes.appendChild(transNode);
           }
-        );
+        }
       }
 
-      // 4b. Insert <transpose> into <attributes> after <key>
-      if (transpose) {
-        transformedXml = transformedXml.replace(
-          /(<attributes>[\s\S]*?<key>[\s\S]*?<\/key>)/,
-          `$1\n      ${transpose}`
-        );
+      // 5. Lyric removal
+      if (!showLyrics) {
+        const lyrics = xmlDoc.querySelectorAll("lyric");
+        lyrics.forEach(node => node.remove());
       }
 
-// 5. Remove all <lyric> tags everywhere
-if (!showLyrics) {
-  transformedXml = transformedXml.replace(/<lyric[\s\S]*?<\/lyric>/g, "");
-}
+      // 6. Serialize and download
+      const serializer = new XMLSerializer();
+      const transformedXml = serializer.serializeToString(xmlDoc);
 
-
-
-
-      // 6. Trigger download
       const blob = new Blob([transformedXml], { type: "application/xml" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
