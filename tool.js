@@ -7,7 +7,6 @@ document.getElementById("arrangeButton").addEventListener("click", () => {
     return;
   }
 
-  // Configuration per instrument
   const config = {
     "Soprano": {
       octaveShift: 1,
@@ -62,26 +61,25 @@ document.getElementById("arrangeButton").addEventListener("click", () => {
     .then(xmlText => {
       let transformedXml = xmlText;
 
-      // 1. Shift all <octave> values
+      // 1. Octave shift
       transformedXml = transformedXml.replace(/<octave>(\d+)<\/octave>/g, (match, p1) => {
-        const original = parseInt(p1);
-        const shifted = original + octaveShift;
+        const shifted = parseInt(p1) + octaveShift;
         return `<octave>${shifted}</octave>`;
       });
 
-      // 2. Update <part-name>
+      // 2. Replace <part-name>
       transformedXml = transformedXml.replace(
         /<part-name>[^<]*<\/part-name>/,
         `<part-name>${instrument}</part-name>`
       );
 
-      // 3. Replace <clef> block
+      // 3. Replace <clef>
       transformedXml = transformedXml.replace(
         /<clef>[\s\S]*?<\/clef>/,
         clefTemplates[clef]
       );
 
-      // 4a. Replace or insert <transpose> block in <score-part>
+      // 4a. Insert/replace <transpose> in <score-part>
       transformedXml = transformedXml.replace(
         /(<score-part[^>]*>[\s\S]*?<part-name>[^<]*<\/part-name>)([\s\S]*?)(<\/score-part>)/,
         (match, startTag, middle, endTag) => {
@@ -91,27 +89,39 @@ document.getElementById("arrangeButton").addEventListener("click", () => {
         }
       );
 
-      // 4b. Also insert <transpose> into the first <measure>'s <attributes> block
+      // 4b. Insert <transpose> safely inside <attributes> after <key>
       if (transpose) {
         transformedXml = transformedXml.replace(
-          /(<part[^>]*>[\s\S]*?<measure[^>]*>[\s\S]*?<attributes[^>]*>)/,
+          /(<attributes>[\s\S]*?<key>[\s\S]*?<\/key>)/,
           `$1\n      ${transpose}`
         );
       }
 
-      // 4c. Remove all <harmony> tags if chords should be hidden
+      // 5. Remove chord symbols if required
       if (hideChords) {
         transformedXml = transformedXml.replace(/<harmony[\s\S]*?<\/harmony>/g, "");
       }
 
-      // 4d. Remove all <lyric> tags if lyrics should be hidden
+      // 6. Remove lyrics if needed
       if (!showLyrics) {
         transformedXml = transformedXml.replace(/<lyric[\s\S]*?<\/lyric>/g, "");
       }
 
+      // 7. Slash notation (currently disabled for all instruments)
+      if (useSlashNotation) {
+        transformedXml = transformedXml.replace(/<note>([\s\S]*?)<\/note>/g, (match, content) => {
+          if (content.includes("<notehead>")) return match;
+          if (content.includes("<pitch>")) {
+            return match.replace("</pitch>", "</pitch><notehead>slash</notehead>");
+          } else if (content.includes("<rest/>")) {
+            return match.replace("<rest/>", "<rest/><notehead>slash</notehead>");
+          } else {
+            return `<note>${content}<notehead>slash</notehead></note>`;
+          }
+        });
+      }
 
-
-      // 5. Trigger download of modified XML
+      // 8. Trigger download
       const blob = new Blob([transformedXml], { type: "application/xml" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
