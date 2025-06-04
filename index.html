@@ -54,14 +54,16 @@
     <option value="https://raw.githubusercontent.com/georgeharrisca/16/main/tbm%20voice.xml">tbm voice</option>
   </select>
 
-  <!-- Step 2: Choose instruments -->
-  <label for="instrumentSelect">Choose instruments to arrange for:</label>
-  <select id="instrumentSelect" multiple size="4">
-    <option value="Soprano">Soprano</option>
-    <option value="Violin">Violin</option>
-    <option value="Bb Clarinet">Bb Clarinet</option>
-    <option value="Double Bass">Double Bass</option>
-  </select>
+<!-- Step 2: Choose one instrument -->
+<label for="instrumentSelect">Choose an instrument to arrange for:</label>
+<select id="instrumentSelect">
+  <option value="">-- Select an Instrument --</option>
+  <option value="Soprano">Soprano</option>
+  <option value="Violin">Violin</option>
+  <option value="Bb Clarinet">Bb Clarinet</option>
+  <option value="Double Bass">Double Bass</option>
+</select>
+
 
   <!-- Step 3: Arrange button -->
   <button id="arrangeButton">Arrange</button>
@@ -70,15 +72,16 @@
     document.getElementById("arrangeButton").addEventListener("click", () => {
       const xmlFile = document.getElementById("xmlSelect").value;
       const instrumentOptions = Array.from(document.getElementById("instrumentSelect").selectedOptions);
-      const selectedInstruments = instrumentOptions.map(opt => opt.value);
+const instrument = document.getElementById("instrumentSelect").value;
 
-      if (!xmlFile || selectedInstruments.length === 0) {
-        alert("Please select an XML file and at least one instrument.");
-        return;
-      }
+if (!xmlFile || !instrument) {
+  alert("Please select both an XML file and an instrument.");
+  return;
+}
 
-      console.log("XML file selected:", xmlFile);
-      console.log("Instruments selected:", selectedInstruments);
+console.log("XML file selected:", xmlFile);
+console.log("Instrument selected:", instrument);
+
       // We’ll add actual functionality here in the next steps
     });
   </script>
