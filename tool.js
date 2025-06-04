@@ -8,16 +8,17 @@ document.getElementById("arrangeButton").addEventListener("click", () => {
   }
 
   // Define instrument-specific transformations
-  const config = {
-    "Soprano":     { octaveShift: 1, clef: "treble", transpose: null },
-    "Violin":      { octaveShift: 1, clef: "treble", transpose: null },
-    "Bb Clarinet": {
-      octaveShift: 1,
-      clef: "treble",
-      transpose: `<transpose><diatonic>0</diatonic><chromatic>-2</chromatic></transpose>`
-    },
-    "Double Bass": { octaveShift: -2, clef: "bass", transpose: null }
-  };
+const config = {
+  "Soprano":     { octaveShift: 1, clef: "treble", transpose: null },
+  "Violin":      { octaveShift: 1, clef: "treble", transpose: null },
+  "Bb Clarinet": {
+    octaveShift: 1,
+    clef: "treble",
+    transpose: `<transpose><diatonic>0</diatonic><chromatic>2</chromatic></transpose>`
+  },
+  "Double Bass": { octaveShift: -2, clef: "bass", transpose: null }
+};
+
 
   const { octaveShift, clef, transpose } = config[instrument];
 
