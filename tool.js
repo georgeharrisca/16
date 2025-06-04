@@ -83,13 +83,14 @@ document.getElementById("arrangeButton").addEventListener("click", () => {
         );
       }
 
-    // 5. Safely remove <lyric> tags only from within <note> blocks
+// 5. Safely remove all <lyric> blocks from within <note> blocks
 if (!showLyrics) {
   transformedXml = transformedXml.replace(/<note>([\s\S]*?)<\/note>/g, (match, noteContent) => {
     const cleanedNote = noteContent.replace(/<lyric[\s\S]*?<\/lyric>/g, "");
     return `<note>${cleanedNote}</note>`;
   });
 }
+
 
 
       // 6. Trigger download
