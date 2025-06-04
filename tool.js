@@ -13,32 +13,36 @@ document.getElementById("arrangeButton").addEventListener("click", () => {
       clef: "treble",
       transpose: null,
       showLyrics: true,
-      hideChords: true
+      hideChords: true,
+      useSlashNotation: false
     },
     "Violin": {
       octaveShift: 1,
       clef: "treble",
       transpose: null,
       showLyrics: false,
-      hideChords: true
+      hideChords: true,
+      useSlashNotation: false
     },
     "Bb Clarinet": {
       octaveShift: 1,
       clef: "treble",
       transpose: `<transpose><diatonic>0</diatonic><chromatic>2</chromatic></transpose>`,
       showLyrics: false,
-      hideChords: true
+      hideChords: true,
+      useSlashNotation: false
     },
     "Double Bass": {
       octaveShift: -2,
       clef: "bass",
       transpose: null,
       showLyrics: false,
-      hideChords: true
+      hideChords: true,
+      useSlashNotation: false
     }
   };
 
-  const { octaveShift, clef, transpose, showLyrics, hideChords } = config[instrument];
+  const { octaveShift, clef, transpose, showLyrics, hideChords, useSlashNotation } = config[instrument];
 
   const clefTemplates = {
     treble: `<sign>G</sign><line>2</line>`,
@@ -119,7 +123,27 @@ document.getElementById("arrangeButton").addEventListener("click", () => {
         harmonies.forEach(node => node.remove());
       }
 
-      // 7. Serialize and download
+      // 7. Slash notation
+      if (useSlashNotation) {
+        const notes = xmlDoc.querySelectorAll("note");
+        notes.forEach(note => {
+          if (note.querySelector("notehead")) return;
+
+          const pitch = note.querySelector("pitch");
+          const rest = note.querySelector("rest");
+
+          const slashNode = xmlDoc.createElement("notehead");
+          slashNode.textContent = "slash";
+
+          if (pitch) {
+            pitch.parentNode.insertBefore(slashNode, pitch.nextSibling);
+          } else if (rest) {
+            rest.parentNode.insertBefore(slashNode, rest.nextSibling);
+          }
+        });
+      }
+
+      // 8. Serialize and download
       const serializer = new XMLSerializer();
       const transformedXml = serializer.serializeToString(xmlDoc);
 
