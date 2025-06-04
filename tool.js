@@ -12,29 +12,33 @@ document.getElementById("arrangeButton").addEventListener("click", () => {
       octaveShift: 1,
       clef: "treble",
       transpose: null,
-      showLyrics: true
+      showLyrics: true,
+      hideChords: true
     },
     "Violin": {
       octaveShift: 1,
       clef: "treble",
       transpose: null,
-      showLyrics: false
+      showLyrics: false,
+      hideChords: true
     },
     "Bb Clarinet": {
       octaveShift: 1,
       clef: "treble",
       transpose: `<transpose><diatonic>0</diatonic><chromatic>2</chromatic></transpose>`,
-      showLyrics: false
+      showLyrics: false,
+      hideChords: true
     },
     "Double Bass": {
       octaveShift: -2,
       clef: "bass",
       transpose: null,
-      showLyrics: false
+      showLyrics: false,
+      hideChords: true
     }
   };
 
-  const { octaveShift, clef, transpose, showLyrics } = config[instrument];
+  const { octaveShift, clef, transpose, showLyrics, hideChords } = config[instrument];
 
   const clefTemplates = {
     treble: `<sign>G</sign><line>2</line>`,
@@ -70,7 +74,7 @@ document.getElementById("arrangeButton").addEventListener("click", () => {
         while (newClef.firstChild) clefNode.appendChild(newClef.firstChild);
       }
 
-      // 4a. Transpose inside <score-part>
+      // 4a. Transpose in <score-part>
       if (transpose) {
         const scorePart = xmlDoc.querySelector("score-part");
         if (scorePart) {
@@ -84,7 +88,7 @@ document.getElementById("arrangeButton").addEventListener("click", () => {
         }
       }
 
-      // 4b. Transpose inside <attributes> (after <key>)
+      // 4b. Transpose in <attributes> (after <key>)
       if (transpose) {
         const attributes = xmlDoc.querySelector("attributes");
         if (attributes) {
@@ -103,13 +107,19 @@ document.getElementById("arrangeButton").addEventListener("click", () => {
         }
       }
 
-      // 5. Lyric removal
+      // 5. Remove lyrics if needed
       if (!showLyrics) {
         const lyrics = xmlDoc.querySelectorAll("lyric");
         lyrics.forEach(node => node.remove());
       }
 
-      // 6. Serialize and download
+      // 6. Remove chord symbols if needed
+      if (hideChords) {
+        const harmonies = xmlDoc.querySelectorAll("harmony");
+        harmonies.forEach(node => node.remove());
+      }
+
+      // 7. Serialize and download
       const serializer = new XMLSerializer();
       const transformedXml = serializer.serializeToString(xmlDoc);
 
