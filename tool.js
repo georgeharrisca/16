@@ -7,15 +7,20 @@ document.getElementById("arrangeButton").addEventListener("click", () => {
     return;
   }
 
-  // Define octave shifts per instrument
-  const octaveShiftMap = {
-    "Soprano": 1,
-    "Violin": 1,
-    "Bb Clarinet": 1,
-    "Double Bass": -2
+  // Define instrument-specific transformations
+  const config = {
+    "Soprano":     { octaveShift: 1, clef: "treble", transpose: null },
+    "Violin":      { octaveShift: 1, clef: "treble", transpose: null },
+    "Bb Clarinet": { octaveShift: 1, clef: "treble", transpose: `<transpose><diatonic>0</diatonic><chromatic>-2</chromatic></transpose>` },
+    "Double Bass": { octaveShift: -2, clef: "bass", transpose: null }
   };
 
-  const shiftAmount = octaveShiftMap[instrument];
+  const { octaveShift, clef, transpose } = config[instrument];
+
+  const clefTemplates = {
+    treble: `<clef><sign>G</sign><line>2</line></clef>`,
+    bass: `<clef><sign>F</sign><line>4</line></clef>`
+  };
 
   fetch(xmlFile)
     .then(response => response.text())
@@ -25,17 +30,37 @@ document.getElementById("arrangeButton").addEventListener("click", () => {
       // 1. Shift all <octave> values
       transformedXml = transformedXml.replace(/<octave>(\d+)<\/octave>/g, (match, p1) => {
         const original = parseInt(p1);
-        const shifted = original + shiftAmount;
+        const shifted = original + octaveShift;
         return `<octave>${shifted}</octave>`;
       });
 
-      // 2. Update <part-name> to selected instrument
+      // 2. Update <part-name>
       transformedXml = transformedXml.replace(
         /<part-name>[^<]*<\/part-name>/,
         `<part-name>${instrument}</part-name>`
       );
 
-      // 3. Trigger XML file download
+      // 3. Replace <clef> block
+      transformedXml = transformedXml.replace(
+        /<clef>[\s\S]*?<\/clef>/,
+        clefTemplates[clef]
+      );
+
+      // 4. Replace or insert <transpose> block inside <score-part>
+      transformedXml = transformedXml.replace(
+        /(<score-part[^>]*>[\s\S]*?<part-name>[^<]*<\/part-name>)([\s\S]*?)(<\/score-part>)/,
+        (match, startTag, middle, endTag) => {
+          // Remove existing transpose tag
+          const cleanedMiddle = middle.replace(/<transpose>[\s\S]*?<\/transpose>/g, "");
+
+          // Insert new transpose if needed
+          const newTranspose = transpose ? `\n    ${transpose}` : "";
+
+          return `${startTag}${cleanedMiddle}${newTranspose}\n  ${endTag}`;
+        }
+      );
+
+      // 5. Trigger download
       const blob = new Blob([transformedXml], { type: "application/xml" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
