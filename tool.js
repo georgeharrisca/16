@@ -11,12 +11,17 @@ document.getElementById("arrangeButton").addEventListener("click", () => {
   const config = {
     "Soprano":     { octaveShift: 1, clef: "treble", transpose: null },
     "Violin":      { octaveShift: 1, clef: "treble", transpose: null },
-    "Bb Clarinet": { octaveShift: 1, clef: "treble", transpose: `<transpose><diatonic>0</diatonic><chromatic>-2</chromatic></transpose>` },
+    "Bb Clarinet": {
+      octaveShift: 1,
+      clef: "treble",
+      transpose: `<transpose><diatonic>0</diatonic><chromatic>-2</chromatic></transpose>`
+    },
     "Double Bass": { octaveShift: -2, clef: "bass", transpose: null }
   };
 
   const { octaveShift, clef, transpose } = config[instrument];
 
+  // Define clef XML snippets
   const clefTemplates = {
     treble: `<clef><sign>G</sign><line>2</line></clef>`,
     bass: `<clef><sign>F</sign><line>4</line></clef>`
@@ -46,19 +51,23 @@ document.getElementById("arrangeButton").addEventListener("click", () => {
         clefTemplates[clef]
       );
 
-      // 4. Replace or insert <transpose> block inside <score-part>
+      // 4a. Replace or insert <transpose> block inside <score-part>
       transformedXml = transformedXml.replace(
         /(<score-part[^>]*>[\s\S]*?<part-name>[^<]*<\/part-name>)([\s\S]*?)(<\/score-part>)/,
         (match, startTag, middle, endTag) => {
-          // Remove existing transpose tag
           const cleanedMiddle = middle.replace(/<transpose>[\s\S]*?<\/transpose>/g, "");
-
-          // Insert new transpose if needed
           const newTranspose = transpose ? `\n    ${transpose}` : "";
-
           return `${startTag}${cleanedMiddle}${newTranspose}\n  ${endTag}`;
         }
       );
+
+      // 4b. Also insert transpose into first <measure>'s <attributes> block
+      if (transpose) {
+        transformedXml = transformedXml.replace(
+          /(<part[^>]*>[\s\S]*?<measure[^>]*>[\s\S]*?<attributes[^>]*>)/,
+          `$1\n      ${transpose}`
+        );
+      }
 
       // 5. Trigger download
       const blob = new Blob([transformedXml], { type: "application/xml" });
