@@ -83,10 +83,14 @@ document.getElementById("arrangeButton").addEventListener("click", () => {
         );
       }
 
-      // 5. Remove <lyric> tags if lyrics should not be shown
-      if (!showLyrics) {
-        transformedXml = transformedXml.replace(/<lyric[\s\S]*?<\/lyric>/g, "");
-      }
+    // 5. Safely remove <lyric> tags only from within <note> blocks
+if (!showLyrics) {
+  transformedXml = transformedXml.replace(/<note>([\s\S]*?)<\/note>/g, (match, noteContent) => {
+    const cleanedNote = noteContent.replace(/<lyric[\s\S]*?<\/lyric>/g, "");
+    return `<note>${cleanedNote}</note>`;
+  });
+}
+
 
       // 6. Trigger download
       const blob = new Blob([transformedXml], { type: "application/xml" });
