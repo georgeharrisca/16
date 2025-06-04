@@ -9,18 +9,21 @@ document.getElementById("arrangeButton").addEventListener("click", () => {
 
   // Define instrument-specific transformations
 const config = {
-  "Soprano":     { octaveShift: 1, clef: "treble", transpose: null },
-  "Violin":      { octaveShift: 1, clef: "treble", transpose: null },
+  "Soprano":     { octaveShift: 1, clef: "treble", transpose: null, hideChords: true },
+  "Violin":      { octaveShift: 1, clef: "treble", transpose: null, hideChords: true },
   "Bb Clarinet": {
     octaveShift: 1,
     clef: "treble",
-    transpose: `<transpose><diatonic>0</diatonic><chromatic>2</chromatic></transpose>`
+    transpose: `<transpose><diatonic>0</diatonic><chromatic>2</chromatic></transpose>`,
+    hideChords: true
   },
-  "Double Bass": { octaveShift: -2, clef: "bass", transpose: null }
+  "Double Bass": { octaveShift: -2, clef: "bass", transpose: null, hideChords: true }
 };
 
 
-  const { octaveShift, clef, transpose } = config[instrument];
+
+const { octaveShift, clef, transpose, hideChords } = config[instrument];
+
 
   // Define clef XML snippets
   const clefTemplates = {
@@ -69,6 +72,10 @@ const config = {
           `$1\n      ${transpose}`
         );
       }
+// 4c. Remove all <harmony> tags if chord symbols should be hidden
+if (hideChords) {
+  transformedXml = transformedXml.replace(/<harmony[\s\S]*?<\/harmony>/g, "");
+}
 
       // 5. Trigger download
       const blob = new Blob([transformedXml], { type: "application/xml" });
