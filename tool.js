@@ -8,48 +8,13 @@ document.getElementById("arrangeButton").addEventListener("click", () => {
   }
 
   const config = {
-    "Soprano": {
-      octaveShift: 1,
-      clef: "treble",
-      transpose: null,
-      hideChords: true,
-      showLyrics: true,
-      useSlashNotation: false
-    },
-    "Violin": {
-      octaveShift: 1,
-      clef: "treble",
-      transpose: null,
-      hideChords: true,
-      showLyrics: false,
-      useSlashNotation: false
-    },
-    "Bb Clarinet": {
-      octaveShift: 1,
-      clef: "treble",
-      transpose: `<transpose><diatonic>0</diatonic><chromatic>2</chromatic></transpose>`,
-      hideChords: true,
-      showLyrics: false,
-      useSlashNotation: false
-    },
-    "Double Bass": {
-      octaveShift: -2,
-      clef: "bass",
-      transpose: null,
-      hideChords: true,
-      showLyrics: false,
-      useSlashNotation: false
-    }
+    "Soprano":     { octaveShift: 1, clef: "treble" },
+    "Violin":      { octaveShift: 1, clef: "treble" },
+    "Bb Clarinet": { octaveShift: 1, clef: "treble" },
+    "Double Bass": { octaveShift: -2, clef: "bass" }
   };
 
-  const {
-    octaveShift,
-    clef,
-    transpose,
-    hideChords,
-    showLyrics,
-    useSlashNotation
-  } = config[instrument];
+  const { octaveShift, clef } = config[instrument];
 
   const clefTemplates = {
     treble: `<clef><sign>G</sign><line>2</line></clef>`,
@@ -61,7 +26,7 @@ document.getElementById("arrangeButton").addEventListener("click", () => {
     .then(xmlText => {
       let transformedXml = xmlText;
 
-      // 1. Octave shift
+      // 1. Shift all <octave> values
       transformedXml = transformedXml.replace(/<octave>(\d+)<\/octave>/g, (match, p1) => {
         const shifted = parseInt(p1) + octaveShift;
         return `<octave>${shifted}</octave>`;
@@ -79,49 +44,7 @@ document.getElementById("arrangeButton").addEventListener("click", () => {
         clefTemplates[clef]
       );
 
-      // 4a. Insert/replace <transpose> in <score-part>
-      transformedXml = transformedXml.replace(
-        /(<score-part[^>]*>[\s\S]*?<part-name>[^<]*<\/part-name>)([\s\S]*?)(<\/score-part>)/,
-        (match, startTag, middle, endTag) => {
-          const cleanedMiddle = middle.replace(/<transpose>[\s\S]*?<\/transpose>/g, "");
-          const newTranspose = transpose ? `\n    ${transpose}` : "";
-          return `${startTag}${cleanedMiddle}${newTranspose}\n  ${endTag}`;
-        }
-      );
-
-      // 4b. Insert <transpose> safely inside <attributes> after <key>
-      if (transpose) {
-        transformedXml = transformedXml.replace(
-          /(<attributes>[\s\S]*?<key>[\s\S]*?<\/key>)/,
-          `$1\n      ${transpose}`
-        );
-      }
-
-      // 5. Remove chord symbols if required
-      if (hideChords) {
-        transformedXml = transformedXml.replace(/<harmony[\s\S]*?<\/harmony>/g, "");
-      }
-
-      // 6. Remove lyrics if needed
-      if (!showLyrics) {
-        transformedXml = transformedXml.replace(/<lyric[\s\S]*?<\/lyric>/g, "");
-      }
-
-      // 7. Slash notation (currently disabled for all instruments)
-      if (useSlashNotation) {
-        transformedXml = transformedXml.replace(/<note>([\s\S]*?)<\/note>/g, (match, content) => {
-          if (content.includes("<notehead>")) return match;
-          if (content.includes("<pitch>")) {
-            return match.replace("</pitch>", "</pitch><notehead>slash</notehead>");
-          } else if (content.includes("<rest/>")) {
-            return match.replace("<rest/>", "<rest/><notehead>slash</notehead>");
-          } else {
-            return `<note>${content}<notehead>slash</notehead></note>`;
-          }
-        });
-      }
-
-      // 8. Trigger download
+      // 4. Trigger download
       const blob = new Blob([transformedXml], { type: "application/xml" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
