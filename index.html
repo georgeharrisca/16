@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Auto Arranger</title>
+  <title>Auto Arranger Tool</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -45,7 +45,7 @@
 </head>
 <body>
 
-  <h1>Auto Arranger Tool (16)</h1>
+  <h1>Auto Arranger Tool</h1>
 
   <!-- Step 1: Select XML file -->
   <label for="xmlSelect">Select a MusicXML file:</label>
@@ -54,39 +54,20 @@
     <option value="https://raw.githubusercontent.com/georgeharrisca/16/main/tbm%20voice.xml">tbm voice</option>
   </select>
 
-<!-- Step 2: Choose one instrument -->
-<label for="instrumentSelect">Choose an instrument to arrange for:</label>
-<select id="instrumentSelect">
-  <option value="">-- Select an Instrument --</option>
-  <option value="Soprano">Soprano</option>
-  <option value="Violin">Violin</option>
-  <option value="Bb Clarinet">Bb Clarinet</option>
-  <option value="Double Bass">Double Bass</option>
-</select>
-
+  <!-- Step 2: Choose one instrument -->
+  <label for="instrumentSelect">Choose an instrument to arrange for:</label>
+  <select id="instrumentSelect">
+    <option value="">-- Select an Instrument --</option>
+    <option value="Soprano">Soprano</option>
+    <option value="Violin">Violin</option>
+    <option value="Bb Clarinet">Bb Clarinet</option>
+    <option value="Double Bass">Double Bass</option>
+  </select>
 
   <!-- Step 3: Arrange button -->
   <button id="arrangeButton">Arrange</button>
 
-  <script>
-    document.getElementById("arrangeButton").addEventListener("click", () => {
-      const xmlFile = document.getElementById("xmlSelect").value;
-      const instrumentOptions = Array.from(document.getElementById("instrumentSelect").selectedOptions);
-const instrument = document.getElementById("instrumentSelect").value;
-
-if (!xmlFile || !instrument) {
-  alert("Please select both an XML file and an instrument.");
-  return;
-}
-
-console.log("XML file selected:", xmlFile);
-console.log("Instrument selected:", instrument);
-
-      // We’ll add actual functionality here in the next steps
-    });
-  </script>
-  
+  <!-- Script -->
+  <script src="tool.js"></script>
 </body>
 </html>
-<script src="tool.js"></script>
-
